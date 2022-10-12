@@ -19,7 +19,10 @@ const G = {
     BOTTOMBLOCKHEIGHT: 30,
     BOTTOMBLOCKSTARTHEIGHT: 120,
 
-    PLAYERJUMPCOOLDOWN: 1
+    PLAYERJUMPCOOLDOWN: 1,
+
+    ENEMIESBASESPEED: 1.0,
+    ENEMIESUPSPEED: 1.5
 };
 
 // Game runtime options
@@ -83,30 +86,44 @@ let player;
 let enemies;
 
 
+/**
+ * @type { number }
+ */
+ let currentEnemySpeed;
+
+ /**
+  * @type { number }
+  */
+ let waveCount;
+
+/**
+ * @typedef {{
+ * pos: Vector,
+ * }} Gold
+ */
+
+/**
+ * @type { Gold [] }
+ */
+let golds;
+ 
+
 
 function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
 }
 
-// The game loop function
 async function update() {
-    // The init function running at startup
 	if (!ticks) {
-        // A CrispGameLib function
-        // First argument (number): number of times to run the second argument
-        // Second argument (function): a function that returns an object. This
-        // object is then added to an array. This array will eventually be
-        // returned as output of the times() function.
+
 		blocks = times(100, () => {
-            // Random number generator function
-            // rnd( min, max )
+
             const posX = rnd(0, G.WIDTH);
             const posY = rnd(0, G.HEIGHT);
-            // An object of type Star with appropriate properties
+
             return {
-                // Creates a Vector
+
                 pos: vec(posX, posY),
-                // More RNG
                 speed: G.BLOCK_SPEED_MIN
             };
         });
@@ -121,45 +138,54 @@ async function update() {
 			pos: vec(0, G.BOTTOMBLOCKSTARTHEIGHT)
 		};
 
+        enemies = [];
+
 	}
 
-    // Update for Star
     blocks.forEach((s) => {
-        // Move the star downwards
         s.pos.y += s.speed;
-        // Bring the star back to top once it's past the bottom of the screen
         if (s.pos.y > G.HEIGHT) s.pos.y = 0;
 
-        // Choose a color to draw
         color("light_black");
-        // Draw the star as a square of size 1
         box(s.pos, 1);
     });
 
-	  color("green");
+	color("green");
+    box(player.pos, 6);
 
-	  box(player.pos, 6);
-
-      player.pos.x += player.speed;
-      if (player.pos.x + 3 > G.WIDTH){
+    player.pos.x += player.speed;
+    if (player.pos.x + 3 > G.WIDTH){
         player.pos.x = 0;
-      }
+    }
 
-      if (input.isPressed == true){
-        player.pos.y = player.pos.y - 10;
+    if (input.isPressed == true){
+        player.pos.y = player.pos.y - 5;
         await delay(50);
-        player.pos.y = player.pos.y + 10;
+        player.pos.y = player.pos.y + 5;
 
-      }
-
-    //   if (input.isJustReleased == true){
-    //     player.pos.y = player.pos.y + 10;
-    //   }
-
-    //   player.pos.clamp(0, G.WIDTH, 0, G.HEIGHT);
+    }
 
 
-      color ("black")
 
-      rect(bottomBlocks.pos, G.WIDTH, G.BOTTOMBLOCKHEIGHT);
+    color ("black")
+
+    rect(bottomBlocks.pos, G.WIDTH, G.BOTTOMBLOCKHEIGHT);
+
+    if (enemies.length === 0) {
+        currentEnemySpeed =
+            rnd(G.ENEMY_MIN_BASE_SPEED, G.ENEMY_MAX_BASE_SPEED) * difficulty;
+        for (let i = 0; i < 9; i++) {
+            const posX = rnd(0, G.WIDTH);
+            const posY = 100;
+            enemies.push({ pos: vec(posX, posY) })
+        }
+    }
+      
+    remove(enemies, (e) => {
+        e.pos.x += currentEnemySpeed;
+        color("red");
+        box(e.pos, 5);
+
+        return (e.pos.x > G.WIDTH);
+    });
 }
