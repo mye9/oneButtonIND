@@ -31,6 +31,7 @@ options = {
 	viewSize: {x: G.WIDTH, y: G.HEIGHT},
     isCapturing: true,
     isCapturingGameCanvasOnly: true,
+    isReplayEnabled: true,
     captureCanvasScale: 2
 };
 
@@ -94,7 +95,8 @@ let enemies;
  /**
   * @type { number }
   */
- let waveCount;
+ let currentGoldSpeed;
+
 
 /**
  * @typedef {{
@@ -139,6 +141,7 @@ async function update() {
 		};
 
         enemies = [];
+        golds = [];
 
 	}
 
@@ -174,10 +177,20 @@ async function update() {
     if (enemies.length === 0) {
         currentEnemySpeed =
             rnd(G.ENEMY_MIN_BASE_SPEED, G.ENEMY_MAX_BASE_SPEED) * difficulty;
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < 7; i++) {
             const posX = rnd(0, G.WIDTH);
             const posY = 100;
             enemies.push({ pos: vec(posX, posY) })
+        }
+    }
+
+    if (golds.length === 0) {
+        currentGoldSpeed =
+            rnd(0.1, 0.5) * difficulty;
+        for (let i = 0; i < 5; i++) {
+            const posX = rnd(0, G.WIDTH);
+            const posY = 100;
+            golds.push({ pos: vec(posX, posY) })
         }
     }
       
@@ -186,6 +199,30 @@ async function update() {
         color("red");
         box(e.pos, 5);
 
+        const isCollidingWithEnemies = box(e.pos, 5).isColliding.rect.green;
+        if(isCollidingWithEnemies){
+            color ("red");
+            particle(e.pos);
+            end();
+        }
+
         return (e.pos.x > G.WIDTH);
     });
+
+
+    remove(golds, (g) => {
+        g.pos.x += currentGoldSpeed;
+        color("yellow");
+        box(g.pos, 5);
+
+        const isCollidingWithGold = box(g.pos, 5).isColliding.rect.green;
+        if(isCollidingWithGold){
+            color("yellow");
+            particle (g.pos);
+            addScore(1, g.pos);
+        }
+
+        return (g.pos.x > G.WIDTH || isCollidingWithGold);
+    });
+
 }
