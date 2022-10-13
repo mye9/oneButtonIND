@@ -2,7 +2,9 @@
 title = "GOLD CATCHING";
 
 // The description, which is also displayed on the title screen
-description = `
+description = `CATCHING 
+YELLOW/CYAN BLOCKS 
+AND AVOID RED BLOCKS
 `;
 
 // The array of custom sprites
@@ -20,9 +22,12 @@ const G = {
     BOTTOMBLOCKSTARTHEIGHT: 120,
 
     PLAYERJUMPCOOLDOWN: 1,
+    PLAYERBASESPEED: 0.7,
+    PLAYERUPSPEED: 1.2,
 
     ENEMIESBASESPEED: 1.0,
-    ENEMIESUPSPEED: 1.5
+    ENEMIESUPSPEED: 1.5,
+    ENEMIESHEIGHT: 95
 };
 
 // Game runtime options
@@ -32,7 +37,9 @@ options = {
     isCapturing: true,
     isCapturingGameCanvasOnly: true,
     isReplayEnabled: true,
-    captureCanvasScale: 2
+    captureCanvasScale: 2,
+    isPlayingBgm: true,
+    seed: 7777
 };
 
 // JSDoc comments for typing
@@ -108,7 +115,18 @@ let enemies;
  * @type { Gold [] }
  */
 let golds;
- 
+
+/**
+ * @typedef {{
+ * pos: Vector,
+ * }} HighValueGold
+ */
+
+/**
+ * @type { Gold [] }
+ */
+let highValueGolds;
+
 
 
 function delay(time) {
@@ -132,7 +150,7 @@ async function update() {
 
 		player =  {
 			pos: vec(3, G.BOTTOMBLOCKSTARTHEIGHT - 3),
-            speed: 1.0,
+            speed: rnd(G.PLAYERBASESPEED, G.PLAYERUPSPEED) * difficulty,
             jumptime: G.PLAYERJUMPCOOLDOWN
 		};
 
@@ -142,6 +160,7 @@ async function update() {
 
         enemies = [];
         golds = [];
+        highValueGolds = [];
 
 	}
 
@@ -162,9 +181,9 @@ async function update() {
     }
 
     if (input.isPressed == true){
-        player.pos.y = player.pos.y - 5;
+        player.pos.y = player.pos.y - 10;
         await delay(50);
-        player.pos.y = player.pos.y + 5;
+        player.pos.y = player.pos.y + 10;
 
     }
 
@@ -179,7 +198,7 @@ async function update() {
             rnd(G.ENEMY_MIN_BASE_SPEED, G.ENEMY_MAX_BASE_SPEED) * difficulty;
         for (let i = 0; i < 7; i++) {
             const posX = rnd(0, G.WIDTH);
-            const posY = 100;
+            const posY = G.ENEMIESHEIGHT;
             enemies.push({ pos: vec(posX, posY) })
         }
     }
@@ -189,9 +208,17 @@ async function update() {
             rnd(0.1, 0.5) * difficulty;
         for (let i = 0; i < 5; i++) {
             const posX = rnd(0, G.WIDTH);
-            const posY = 100;
+            const posY = G.ENEMIESHEIGHT;
             golds.push({ pos: vec(posX, posY) })
         }
+    }
+
+
+    if (highValueGolds.length === 0) {
+
+        const posX = rnd(0, G.WIDTH);
+        const posY = G.ENEMIESHEIGHT;
+        highValueGolds.push({ pos: vec(posX, posY) })
     }
       
     remove(enemies, (e) => {
@@ -203,6 +230,7 @@ async function update() {
         if(isCollidingWithEnemies){
             color ("red");
             particle(e.pos);
+            play ("hit");
             end();
         }
 
@@ -220,9 +248,26 @@ async function update() {
             color("yellow");
             particle (g.pos);
             addScore(1, g.pos);
+            play("coin");
         }
 
         return (g.pos.x > G.WIDTH || isCollidingWithGold);
+    });
+
+    remove(highValueGolds, (hg) => {
+        hg.pos.x += 4.0;
+        color("cyan");
+        box(hg.pos, 5);
+
+        const isCollidingWithHighValueGold = box(hg.pos, 5).isColliding.rect.green;
+        if(isCollidingWithHighValueGold){
+            color("cyan");
+            particle (hg.pos);
+            addScore(10, hg.pos);
+            play("lucky");
+        }
+
+        return (hg.pos.x > G.WIDTH || isCollidingWithHighValueGold);
     });
 
 }
