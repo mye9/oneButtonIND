@@ -127,6 +127,17 @@ let golds;
  */
 let highValueGolds;
 
+/**
+ * @typedef {{
+ * pos: Vector,
+ * }} HiddenGold
+ */
+
+/**
+ * @type { Gold [] }
+ */
+let hiddenGolds;
+
 
 
 function delay(time) {
@@ -161,6 +172,7 @@ async function update() {
         enemies = [];
         golds = [];
         highValueGolds = [];
+        hiddenGolds = [];
 
 	}
 
@@ -213,6 +225,13 @@ async function update() {
         }
     }
 
+    if (hiddenGolds.length === 0) {
+
+        const posX = rnd(0, G.WIDTH);
+        const posY = G.ENEMIESHEIGHT;
+        hiddenGolds.push({ pos: vec(posX, posY) })
+    }
+
 
     if (highValueGolds.length === 0) {
 
@@ -254,20 +273,37 @@ async function update() {
         return (g.pos.x > G.WIDTH || isCollidingWithGold);
     });
 
-    remove(highValueGolds, (hg) => {
-        hg.pos.x += 4.0;
-        color("cyan");
+
+    remove(hiddenGolds, (hg) => {
+        hg.pos.x += currentGoldSpeed;
+        color("yellow");
         box(hg.pos, 5);
 
-        const isCollidingWithHighValueGold = box(hg.pos, 5).isColliding.rect.green;
+        const isCollidingWithHiddenGold = box(hg.pos, 5).isColliding.rect.green;
+        if(isCollidingWithHiddenGold){
+            color("yellow");
+            particle (hg.pos);
+            addScore(5, hg.pos);
+            play("coin");
+        }
+
+        return (hg.pos.x > G.WIDTH || isCollidingWithHiddenGold);
+    });
+
+    remove(highValueGolds, (vg) => {
+        vg.pos.x += 4.0;
+        color("cyan");
+        box(vg.pos, 5);
+
+        const isCollidingWithHighValueGold = box(vg.pos, 5).isColliding.rect.green;
         if(isCollidingWithHighValueGold){
             color("cyan");
-            particle (hg.pos);
-            addScore(10, hg.pos);
+            particle (vg.pos);
+            addScore(10, vg.pos);
             play("lucky");
         }
 
-        return (hg.pos.x > G.WIDTH || isCollidingWithHighValueGold);
+        return (vg.pos.x > G.WIDTH || isCollidingWithHighValueGold);
     });
 
 }
